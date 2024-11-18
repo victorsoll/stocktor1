@@ -197,6 +197,7 @@
             const prixAchat = parseFloat(document.getElementById('prixAchat').value);
             const prixVente = document.getElementById('prixVente').value ? parseFloat(document.getElementById('prixVente').value) : "Stock";
             const date = document.getElementById('date').value;
+            const photo = document.getElementById('photo').files[0]; // Récupérer l'image sélectionnée
 
             if (!nom || !marque || !date) {
                 alert('Veuillez remplir tous les champs obligatoires.');
@@ -208,18 +209,30 @@
                 return;
             }
 
-            const article = {
-                nom,
-                marque,
-                prixAchat,
-                prixVente,
-                date
-            };
+            // Créer un objet FileReader pour lire l'image
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                const article = {
+                    nom,
+                    marque,
+                    prixAchat,
+                    prixVente,
+                    date,
+                    photo: reader.result // Stocke l'image sous forme de Data URL
+                };
 
-            articles.push(article);
-            localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarder les articles dans localStorage
-            document.getElementById('articleForm').reset();
-            afficherArticles(); // Met à jour le tableau
+                articles.push(article);
+                localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarder les articles dans localStorage
+                document.getElementById('articleForm').reset();
+                afficherArticles(); // Met à jour le tableau
+            }
+
+            // Vérifier si une photo a été sélectionnée et la lire
+            if (photo) {
+                reader.readAsDataURL(photo); // Lire l'image et la convertir en base64
+            } else {
+                alert('Veuillez ajouter une photo.');
+            }
         }
 
         function modifierArticle(index) {
@@ -302,7 +315,7 @@
                 const row = document.createElement('tr');
 
                 row.innerHTML = `
-                    <td>${article.nom}</td>
+                    <td><img src="${article.photo}" alt="${article.nom}" style="max-width: 80px; height: auto; border-radius: 8px;"></td>
                     <td>${article.marque}</td>
                     <td style="color: red;">${article.prixAchat.toFixed(2)} €</td>
                     <td style="color: ${article.prixVente === "Stock" ? "gray" : "red"};">
@@ -384,6 +397,7 @@
                 <input type="number" step="0.01" id="prixAchat" placeholder="Prix d'achat (€)" required>
                 <input type="number" step="0.01" id="prixVente" placeholder="Prix de vente (€)">
                 <input type="date" id="date" required>
+                <input type="file" id="photo" accept="image/*" required>
                 <button type="button" onclick="ajouterArticle()">Ajouter</button>
             </form>
         </div>
