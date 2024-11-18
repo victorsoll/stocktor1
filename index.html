@@ -131,99 +131,96 @@
 
         .action-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            flex-direction: column; /* Les boutons s'empilent verticalement */
+            gap: 8px; /* Espace entre les boutons */
         }
     </style>
     <script>
-        const serverUrl = "https://stocktor.onrender.com"; // URL du backend Render
+        let articles = JSON.parse(localStorage.getItem('articles')) || []; // Récupérer les articles depuis localStorage au chargement de la page
 
-        let articles = []; // Liste des articles
-
-        // Charger les articles depuis le backend
-        async function chargerArticlesDepuisBackend() {
-            try {
-                const response = await fetch(`${serverUrl}/articles`);
-                if (response.ok) {
-                    articles = await response.json();
-                    afficherArticles(); // Afficher les articles dans le tableau
-                } else {
-                    console.error("Erreur lors du chargement des articles :", response.statusText);
-                }
-            } catch (error) {
-                console.error("Erreur de connexion au backend :", error);
-            }
-        }
-
-        // Sauvegarder un article sur le backend
-        async function sauvegarderArticle(article) {
-    try {
-        const response = await fetch(`${serverUrl}/articles`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(article),
-        });
-
-        // Vérifiez si la réponse contient des données JSON
-        if (response.ok) {
-            const nouvelArticle = await response.json();
-            articles.push(nouvelArticle); // Ajouter l'article localement
-            afficherArticles(); // Rafraîchir l'affichage après ajout
-        } else {
-            console.error("Erreur lors de l'ajout de l'article :", response.statusText);
-        }
-    } catch (error) {
-        console.error("Erreur de connexion au backend :", error);
-    }
-}
-
-
-        // Supprimer un article du backend
-        async function supprimerArticleDuBackend(id) {
-            try {
-                const response = await fetch(`${serverUrl}/articles/${id}`, { method: "DELETE" });
-                if (response.ok) {
-                    articles = articles.filter(article => article.id !== id); // Supprimer localement
-                    afficherArticles();
-                } else {
-                    console.error("Erreur lors de la suppression :", response.statusText);
-                }
-            } catch (error) {
-                console.error("Erreur de connexion au backend :", error);
-            }
-        }
-
-        // Ajouter un article
         function ajouterArticle() {
-            const nom = document.getElementById("nom").value;
-            const marque = document.getElementById("marque").value;
-            const prixAchat = parseFloat(document.getElementById("prixAchat").value);
-            const prixVente = document.getElementById("prixVente").value
-                ? parseFloat(document.getElementById("prixVente").value)
-                : "Stock";
-            const date = document.getElementById("date").value;
+            const nom = document.getElementById('nom').value;
+            const marque = document.getElementById('marque').value;
+            const prixAchat = parseFloat(document.getElementById('prixAchat').value);
+            const prixVente = document.getElementById('prixVente').value ? parseFloat(document.getElementById('prixVente').value) : "Stock";
+            const date = document.getElementById('date').value;
 
             if (nom && marque && date && !isNaN(prixAchat)) {
-                const article = { nom, marque, prixAchat, prixVente, date };
-                sauvegarderArticle(article); // Enregistrer sur le backend
-                document.getElementById("articleForm").reset(); // Réinitialiser le formulaire
+                const article = {
+                    nom,
+                    marque,
+                    prixAchat,
+                    prixVente,
+                    date
+                };
+                articles.push(article);
+                localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarder les articles dans localStorage
+                document.getElementById('articleForm').reset();
+                afficherArticles(); // Met à jour le tableau
             } else {
-                alert("Veuillez remplir tous les champs correctement.");
+                alert('Veuillez remplir tous les champs correctement.');
             }
         }
 
-        // Supprimer un article
+        function modifierArticle(index) {
+            const prixVente = prompt("Entrez le prix de vente pour cet article :");
+            if (prixVente !== null && !isNaN(prixVente)) {
+                articles[index].prixVente = parseFloat(prixVente); // Met à jour le prix de vente
+                localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarde dans localStorage
+                afficherArticles(); // Rafraîchit le tableau
+            } else if (prixVente !== null) {
+                alert("Veuillez entrer un prix de vente valide.");
+            }
+        }
+
         function supprimerArticle(index) {
             if (confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) {
-                const article = articles[index];
-                supprimerArticleDuBackend(article.id); // Supprimer via le backend
+                articles.splice(index, 1); // Supprime l'article de la liste
+                localStorage.setItem('articles', JSON.stringify(articles)); // Met à jour le localStorage
+                afficherArticles(); // Rafraîchit le tableau
             }
         }
 
-        // Afficher les articles
+        function filtrerArticlesParDate() {
+            const mois = document.getElementById('mois').value;
+            const annee = document.getElementById('annee').value;
+
+            return articles.filter(article => {
+                const articleDate = new Date(article.date);
+                const articleMois = articleDate.getMonth() + 1;
+                const articleAnnee = articleDate.getFullYear();
+
+                return (
+                    (mois === "Tous" || articleMois === parseInt(mois)) &&
+                    (annee === "Tous" || articleAnnee === parseInt(annee))
+                );
+            });
+        }
+
+        function calculerStatistiques(articlesFiltres) {
+            let totalAchat = 0;
+            let totalVente = 0;
+
+            articlesFiltres.forEach(article => {
+                totalAchat += article.prixAchat;
+                if (article.prixVente !== "Stock") {
+                    totalVente += parseFloat(article.prixVente);
+                }
+            });
+
+            const benefice = totalVente - totalAchat;
+            const margeMoyenne = totalAchat > 0 ? (totalVente / totalAchat).toFixed(2) : "0";
+
+            // Mise à jour des valeurs affichées
+            document.getElementById('totalAchats').textContent = totalAchat.toFixed(2) + " €";
+            document.getElementById('totalVentes').textContent = totalVente.toFixed(2) + " €";
+            document.getElementById('benefice').textContent = benefice.toFixed(2) + " €";
+            document.getElementById('margeMoyenne').textContent = margeMoyenne + "x";
+        }
+
         function afficherArticles() {
-            const tableau = document.getElementById("listeArticles");
-            tableau.innerHTML = ""; // Efface l'ancien contenu
+            const tableau = document.getElementById('listeArticles');
+            tableau.innerHTML = ''; // Effacer le contenu précédent
 
             const headerRow = `
                 <tr>
@@ -237,58 +234,44 @@
             `;
             tableau.innerHTML = headerRow;
 
-            articles.forEach((article, index) => {
-                const benefice =
-                    article.prixVente !== "Stock"
-                        ? (article.prixVente - article.prixAchat).toFixed(2)
-                        : "-";
-                const row = document.createElement("tr");
+            const articlesFiltres = filtrerArticlesParDate();
+
+            // Boucle sur chaque article
+            articlesFiltres.forEach((article, index) => {
+                const benefice = article.prixVente !== "Stock" ? (article.prixVente - article.prixAchat).toFixed(2) : "-";
+                const row = document.createElement('tr');
 
                 row.innerHTML = `
                     <td>${article.nom}</td>
                     <td>${article.marque}</td>
-                    <td>${article.prixAchat.toFixed(2)} €</td>
-                    <td>${article.prixVente === "Stock" ? "Stock" : `${article.prixVente.toFixed(2)} €`}</td>
-                    <td>${benefice === "-" ? "-" : `${benefice} €`}</td>
+                    <td style="color: red;">${article.prixAchat.toFixed(2)} €</td>
+                    <td style="color: ${article.prixVente === "Stock" ? "gray" : "red"};">
+                        ${article.prixVente === "Stock" ? "Stock" : article.prixVente.toFixed(2) + " €"}
+                    </td>
+                    <td style="color: ${benefice > 0 ? "green" : benefice < 0 ? "red" : "gray"};">
+                        ${benefice === "-" ? "-" : benefice + " €"}
+                    </td>
                     <td class="action-buttons">
                         <button class="edit-button" onclick="modifierArticle(${index})">Modifier</button>
                         <button class="delete-button" onclick="supprimerArticle(${index})">Supprimer</button>
                     </td>
                 `;
-                tableau.appendChild(row);
+
+                tableau.appendChild(row); // Ajouter la ligne au tableau
             });
 
-            calculerStatistiques(articles); // Recalculer les statistiques
+            calculerStatistiques(articlesFiltres); // Recalculer les statistiques
         }
 
-        // Calculer les statistiques
-        function calculerStatistiques(articlesFiltres) {
-            let totalAchat = 0;
-            let totalVente = 0;
-
-            articlesFiltres.forEach((article) => {
-                totalAchat += article.prixAchat;
-                if (article.prixVente !== "Stock") {
-                    totalVente += parseFloat(article.prixVente);
-                }
-            });
-
-            const benefice = totalVente - totalAchat;
-            const margeMoyenne = totalAchat > 0 ? (totalVente / totalAchat).toFixed(2) : "0";
-
-            document.getElementById("totalAchats").textContent = totalAchat.toFixed(2) + " €";
-            document.getElementById("totalVentes").textContent = totalVente.toFixed(2) + " €";
-            document.getElementById("benefice").textContent = benefice.toFixed(2) + " €";
-            document.getElementById("margeMoyenne").textContent = margeMoyenne + "x";
-        }
-
-        // Charger les articles au démarrage
-        window.onload = chargerArticlesDepuisBackend;
+        // Appeler afficherArticles() au chargement de la page pour afficher les articles sauvegardés
+        window.onload = afficherArticles;
     </script>
 </head>
 <body>
     <div class="container">
         <h1>DASHBOARD</h1>
+
+        <!-- Sélecteur d'année et mois -->
         <div class="selectors">
             <select id="annee" onchange="afficherArticles()">
                 <option value="Tous">Tous</option>
@@ -296,6 +279,7 @@
                 <option value="2025">2025</option>
                 <option value="2026">2026</option>
             </select>
+
             <select id="mois" onchange="afficherArticles()">
                 <option value="Tous">Tous</option>
                 <option value="01">Janvier</option>
