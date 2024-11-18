@@ -145,21 +145,28 @@
             const prixVente = document.getElementById('prixVente').value ? parseFloat(document.getElementById('prixVente').value) : "Stock";
             const date = document.getElementById('date').value;
 
-            if (nom && marque && date && !isNaN(prixAchat)) {
-                const article = {
-                    nom,
-                    marque,
-                    prixAchat,
-                    prixVente,
-                    date
-                };
-                articles.push(article);
-                localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarder les articles dans localStorage
-                document.getElementById('articleForm').reset();
-                afficherArticles(); // Met à jour le tableau
-            } else {
-                alert('Veuillez remplir tous les champs correctement.');
+            if (!nom || !marque || !date) {
+                alert('Veuillez remplir tous les champs obligatoires.');
+                return;
             }
+
+            if (isNaN(prixAchat) || prixAchat <= 0) {
+                alert('Veuillez entrer un prix d\'achat valide.');
+                return;
+            }
+
+            const article = {
+                nom,
+                marque,
+                prixAchat,
+                prixVente,
+                date
+            };
+
+            articles.push(article);
+            localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarder les articles dans localStorage
+            document.getElementById('articleForm').reset();
+            afficherArticles(); // Met à jour le tableau
         }
 
         function modifierArticle(index) {
