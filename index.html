@@ -157,23 +157,26 @@
 
         // Sauvegarder un article sur le backend
         async function sauvegarderArticle(article) {
-            try {
-                const response = await fetch(`${serverUrl}/articles`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(article),
-                });
-                if (response.ok) {
-                    const nouvelArticle = await response.json();
-                    articles.push(nouvelArticle); // Ajouter l'article localement
-                    afficherArticles(); // Rafraîchir l'affichage
-                } else {
-                    console.error("Erreur lors de l'ajout de l'article :", response.statusText);
-                }
-            } catch (error) {
-                console.error("Erreur de connexion au backend :", error);
-            }
+    try {
+        const response = await fetch(`${serverUrl}/articles`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(article),
+        });
+
+        // Vérifiez si la réponse contient des données JSON
+        if (response.ok) {
+            const nouvelArticle = await response.json();
+            articles.push(nouvelArticle); // Ajouter l'article localement
+            afficherArticles(); // Rafraîchir l'affichage après ajout
+        } else {
+            console.error("Erreur lors de l'ajout de l'article :", response.statusText);
         }
+    } catch (error) {
+        console.error("Erreur de connexion au backend :", error);
+    }
+}
+
 
         // Supprimer un article du backend
         async function supprimerArticleDuBackend(id) {
