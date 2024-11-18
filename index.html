@@ -164,9 +164,7 @@
                     body: JSON.stringify(article),
                 });
                 if (response.ok) {
-                    const nouvelArticle = await response.json();
-                    articles.push(nouvelArticle);
-                    afficherArticles(); // Rafraîchir l'affichage après ajout
+                    chargerArticlesDepuisBackend(); // Rafraîchir la liste après ajout
                 } else {
                     console.error("Erreur lors de l'ajout de l'article :", response.statusText);
                 }
@@ -176,12 +174,11 @@
         }
 
         // Supprimer un article du backend
-        async function supprimerArticleDuBackend(id, index) {
+        async function supprimerArticleDuBackend(id) {
             try {
                 const response = await fetch(`${serverUrl}/articles/${id}`, { method: "DELETE" });
                 if (response.ok) {
-                    articles.splice(index, 1); // Supprimer localement
-                    afficherArticles();
+                    chargerArticlesDepuisBackend(); // Rafraîchir la liste après suppression
                 } else {
                     console.error("Erreur lors de la suppression :", response.statusText);
                 }
@@ -213,29 +210,8 @@
         function supprimerArticle(index) {
             if (confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) {
                 const article = articles[index];
-                supprimerArticleDuBackend(article.id, index); // Supprimer via le backend
+                supprimerArticleDuBackend(article.id); // Supprimer via le backend
             }
-        }
-
-        // Calculer les statistiques
-        function calculerStatistiques(articlesFiltres) {
-            let totalAchat = 0;
-            let totalVente = 0;
-
-            articlesFiltres.forEach((article) => {
-                totalAchat += article.prixAchat;
-                if (article.prixVente !== "Stock") {
-                    totalVente += parseFloat(article.prixVente);
-                }
-            });
-
-            const benefice = totalVente - totalAchat;
-            const margeMoyenne = totalAchat > 0 ? (totalVente / totalAchat).toFixed(2) : "0";
-
-            document.getElementById("totalAchats").textContent = totalAchat.toFixed(2) + " €";
-            document.getElementById("totalVentes").textContent = totalVente.toFixed(2) + " €";
-            document.getElementById("benefice").textContent = benefice.toFixed(2) + " €";
-            document.getElementById("margeMoyenne").textContent = margeMoyenne + "x";
         }
 
         // Afficher les articles
@@ -279,6 +255,27 @@
             calculerStatistiques(articles); // Recalculer les statistiques
         }
 
+        // Calculer les statistiques
+        function calculerStatistiques(articlesFiltres) {
+            let totalAchat = 0;
+            let totalVente = 0;
+
+            articlesFiltres.forEach((article) => {
+                totalAchat += article.prixAchat;
+                if (article.prixVente !== "Stock") {
+                    totalVente += parseFloat(article.prixVente);
+                }
+            });
+
+            const benefice = totalVente - totalAchat;
+            const margeMoyenne = totalAchat > 0 ? (totalVente / totalAchat).toFixed(2) : "0";
+
+            document.getElementById("totalAchats").textContent = totalAchat.toFixed(2) + " €";
+            document.getElementById("totalVentes").textContent = totalVente.toFixed(2) + " €";
+            document.getElementById("benefice").textContent = benefice.toFixed(2) + " €";
+            document.getElementById("margeMoyenne").textContent = margeMoyenne + "x";
+        }
+
         // Charger les articles au démarrage
         window.onload = chargerArticlesDepuisBackend;
     </script>
@@ -286,7 +283,6 @@
 <body>
     <div class="container">
         <h1>DASHBOARD</h1>
-
         <div class="selectors">
             <select id="annee" onchange="afficherArticles()">
                 <option value="Tous">Tous</option>
@@ -294,7 +290,6 @@
                 <option value="2025">2025</option>
                 <option value="2026">2026</option>
             </select>
-
             <select id="mois" onchange="afficherArticles()">
                 <option value="Tous">Tous</option>
                 <option value="01">Janvier</option>
