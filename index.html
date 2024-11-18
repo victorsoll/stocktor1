@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application Achat-Revente Dashboard</title>
     <style>
-        /* Votre style existant reste ici */
+        /* Votre style CSS reste ici */
         body {
             font-family: Arial, sans-serif;
             background-color: #1a1a1a;
@@ -67,6 +67,10 @@
             color: #fff;
         }
 
+        table td {
+            background-color: #222;
+        }
+
         .form-container {
             background-color: #333;
             padding: 16px;
@@ -122,17 +126,16 @@
         }
     </style>
     <script>
-        const serverUrl = "https://stocktor.onrender.com"; // Remplacez par l'URL de Render après déploiement
-
-        let articles = []; // Liste d'articles
+        const serverUrl = "http://localhost:3000"; // Remplacez par votre URL Render après déploiement
+        let articles = []; // Liste des articles depuis le backend
 
         // Charger les données depuis le backend
         async function chargerArticles() {
             try {
                 const response = await fetch(`${serverUrl}/articles`);
                 if (response.ok) {
-                    articles = await response.json(); // Met à jour la liste locale
-                    afficherArticles();
+                    articles = await response.json(); // Mettre à jour la liste locale
+                    afficherArticles(); // Rafraîchir l'affichage
                 } else {
                     console.error("Erreur lors du chargement :", response.statusText);
                 }
@@ -141,20 +144,18 @@
             }
         }
 
-        // Sauvegarder un nouvel article sur le backend
+        // Sauvegarder un article sur le backend
         async function sauvegarderArticle(article) {
             try {
                 const response = await fetch(`${serverUrl}/articles`, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(article),
                 });
                 if (response.ok) {
                     const nouvelArticle = await response.json();
-                    articles.push(nouvelArticle);
-                    afficherArticles();
+                    articles.push(nouvelArticle); // Mettre à jour la liste locale
+                    afficherArticles(); // Rafraîchir l'affichage
                 } else {
                     console.error("Erreur lors de la sauvegarde :", response.statusText);
                 }
@@ -163,7 +164,7 @@
             }
         }
 
-        // Supprimer un article du backend
+        // Supprimer un article
         async function supprimerArticle(index) {
             const article = articles[index];
             if (confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) {
@@ -172,8 +173,8 @@
                         method: "DELETE",
                     });
                     if (response.ok) {
-                        articles.splice(index, 1);
-                        afficherArticles();
+                        articles.splice(index, 1); // Supprime localement
+                        afficherArticles(); // Rafraîchir
                     } else {
                         console.error("Erreur lors de la suppression :", response.statusText);
                     }
@@ -195,17 +196,55 @@
 
             if (nom && marque && date && !isNaN(prixAchat)) {
                 const article = { nom, marque, prixAchat, prixVente, date };
-                sauvegarderArticle(article);
+                sauvegarderArticle(article); // Envoyer au backend
                 document.getElementById("articleForm").reset();
             } else {
                 alert("Veuillez remplir tous les champs correctement.");
             }
         }
 
+        // Filtrer les articles par date
+        function filtrerArticlesParDate() {
+            const mois = document.getElementById("mois").value;
+            const annee = document.getElementById("annee").value;
+
+            return articles.filter(article => {
+                const articleDate = new Date(article.date);
+                const articleMois = articleDate.getMonth() + 1; // Mois (1-12)
+                const articleAnnee = articleDate.getFullYear(); // Année (YYYY)
+
+                return (
+                    (mois === "Tous" || articleMois === parseInt(mois)) &&
+                    (annee === "Tous" || articleAnnee === parseInt(annee))
+                );
+            });
+        }
+
+        // Calculer les statistiques (total achats, ventes, bénéfices)
+        function calculerStatistiques(articlesFiltres) {
+            let totalAchat = 0;
+            let totalVente = 0;
+
+            articlesFiltres.forEach(article => {
+                totalAchat += article.prixAchat;
+                if (article.prixVente !== "Stock") {
+                    totalVente += parseFloat(article.prixVente);
+                }
+            });
+
+            const benefice = totalVente - totalAchat;
+            const margeMoyenne = totalAchat > 0 ? (totalVente / totalAchat).toFixed(2) : "0";
+
+            document.getElementById("totalAchats").textContent = totalAchat.toFixed(2) + " €";
+            document.getElementById("totalVentes").textContent = totalVente.toFixed(2) + " €";
+            document.getElementById("benefice").textContent = benefice.toFixed(2) + " €";
+            document.getElementById("margeMoyenne").textContent = margeMoyenne + "x";
+        }
+
         // Afficher les articles
         function afficherArticles() {
             const tableau = document.getElementById("listeArticles");
-            tableau.innerHTML = ""; // Effacer le tableau précédent
+            tableau.innerHTML = ""; // Efface le tableau
 
             const headerRow = `
                 <tr>
@@ -214,12 +253,14 @@
                     <th>Prix d'achat</th>
                     <th>Prix de vente</th>
                     <th>Bénéfice</th>
-                    <th>Actions</th>
+                    <th>Action</th>
                 </tr>
             `;
             tableau.innerHTML = headerRow;
 
-            articles.forEach((article, index) => {
+            const articlesFiltres = filtrerArticlesParDate();
+
+            articlesFiltres.forEach((article, index) => {
                 const benefice = article.prixVente !== "Stock" ? (article.prixVente - article.prixAchat).toFixed(2) : "-";
                 const row = document.createElement("tr");
 
@@ -229,23 +270,36 @@
                     <td>${article.prixAchat.toFixed(2)} €</td>
                     <td>${article.prixVente === "Stock" ? "Stock" : `${article.prixVente.toFixed(2)} €`}</td>
                     <td>${benefice === "-" ? "-" : `${benefice} €`}</td>
-                    <td class="action-buttons">
+                    <td>
                         <button class="edit-button" onclick="modifierArticle(${index})">Modifier</button>
                         <button class="delete-button" onclick="supprimerArticle(${index})">Supprimer</button>
                     </td>
                 `;
                 tableau.appendChild(row);
             });
+
+            calculerStatistiques(articlesFiltres); // Recalculer les stats
         }
 
-        // Charger les articles au chargement de la page
+        // Charger les articles au démarrage
         window.onload = chargerArticles;
     </script>
 </head>
 <body>
     <div class="container">
         <h1>DASHBOARD</h1>
-
+        <div class="selectors">
+            <select id="annee" onchange="afficherArticles()">
+                <option value="Tous">Tous</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+            </select>
+            <select id="mois" onchange="afficherArticles()">
+                <option value="Tous">Tous</option>
+                <option value="01">Janvier</option>
+                <option value="02">Février</option>
+            </select>
+        </div>
         <div class="dashboard">
             <div class="card">
                 <h3>Total Achats</h3>
@@ -260,20 +314,16 @@
                 <p id="benefice">0 €</p>
             </div>
         </div>
-
         <div class="form-container">
-            <h2>Ajouter un article</h2>
             <form id="articleForm">
-                <input type="text" id="nom" placeholder="Nom de l'article" required>
-                <input type="text" id="marque" placeholder="Marque" required>
-                <input type="number" step="0.01" id="prixAchat" placeholder="Prix d'achat (€)" required>
-                <input type="number" step="0.01" id="prixVente" placeholder="Prix de vente (€)">
-                <input type="date" id="date" required>
+                <input type="text" id="nom" placeholder="Nom de l'article">
+                <input type="text" id="marque" placeholder="Marque">
+                <input type="number" id="prixAchat" placeholder="Prix d'achat (€)">
+                <input type="number" id="prixVente" placeholder="Prix de vente (€)">
+                <input type="date" id="date">
                 <button type="button" onclick="ajouterArticle()">Ajouter</button>
             </form>
         </div>
-
-        <h2>Liste des articles</h2>
         <table id="listeArticles"></table>
     </div>
 </body>
