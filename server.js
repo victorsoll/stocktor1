@@ -18,19 +18,17 @@ app.get("/", (req, res) => {
 
 // Récupérer tous les articles
 app.get("/articles", (req, res) => {
-    console.log("GET /articles - Envoi des articles.");
-    res.json(articles);
+    res.json(articles); // Retourner la liste complète des articles
 });
 
 // Ajouter un nouvel article
 app.post("/articles", (req, res) => {
     const newArticle = {
-        id: articles.length > 0 ? articles[articles.length - 1].id + 1 : 1, // Générer un ID unique
+        id: articles.length + 1, // Générer un ID simple
         ...req.body, // Copier les données du corps de la requête
     };
-    console.log("POST /articles - Nouvel article :", newArticle);
     articles.push(newArticle); // Ajouter l'article à la liste
-    res.status(201).json(newArticle); // Retourner l'article ajouté
+    res.status(201).json(newArticle); // Retourner l'article ajouté en réponse
 });
 
 // Modifier un article existant
@@ -41,7 +39,6 @@ app.put("/articles/:id", (req, res) => {
     if (articleIndex !== -1) {
         // Mettre à jour l'article
         articles[articleIndex] = { ...articles[articleIndex], ...req.body };
-        console.log("PUT /articles/:id - Article mis à jour :", articles[articleIndex]);
         res.json(articles[articleIndex]);
     } else {
         res.status(404).json({ message: "Article non trouvé" });
@@ -55,8 +52,7 @@ app.delete("/articles/:id", (req, res) => {
 
     if (articleIndex !== -1) {
         const deletedArticle = articles.splice(articleIndex, 1); // Supprimer l'article
-        console.log("DELETE /articles/:id - Article supprimé :", deletedArticle);
-        res.json(deletedArticle);
+        res.json(deletedArticle[0]);
     } else {
         res.status(404).json({ message: "Article non trouvé" });
     }
