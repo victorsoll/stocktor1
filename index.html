@@ -164,7 +164,9 @@
                     body: JSON.stringify(article),
                 });
                 if (response.ok) {
-                    chargerArticlesDepuisBackend(); // Rafraîchir la liste après ajout
+                    const nouvelArticle = await response.json();
+                    articles.push(nouvelArticle); // Ajouter l'article localement
+                    afficherArticles(); // Rafraîchir l'affichage
                 } else {
                     console.error("Erreur lors de l'ajout de l'article :", response.statusText);
                 }
@@ -178,7 +180,8 @@
             try {
                 const response = await fetch(`${serverUrl}/articles/${id}`, { method: "DELETE" });
                 if (response.ok) {
-                    chargerArticlesDepuisBackend(); // Rafraîchir la liste après suppression
+                    articles = articles.filter(article => article.id !== id); // Supprimer localement
+                    afficherArticles();
                 } else {
                     console.error("Erreur lors de la suppression :", response.statusText);
                 }
