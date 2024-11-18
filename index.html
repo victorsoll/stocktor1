@@ -5,39 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application Achat-Revente Dashboard</title>
     <style>
+        /* Style général */
         body {
             font-family: Arial, sans-serif;
             background-color: #1a1a1a;
             color: #fff;
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
         }
 
         .container {
-            padding: 20px;
-            max-width: 450px;
+            padding: 16px;
             width: 100%;
-            box-sizing: border-box;
-            margin-top: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .dashboard {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
             gap: 16px;
             margin-bottom: 16px;
-            flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         .card {
@@ -45,9 +34,8 @@
             padding: 16px;
             border-radius: 8px;
             flex: 1;
-            min-width: 150px;
+            min-width: 200px;
             text-align: center;
-            margin-bottom: 20px;
         }
 
         .card h3 {
@@ -65,8 +53,7 @@
             display: flex;
             gap: 16px;
             margin-bottom: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
+            justify-content: space-between;
         }
 
         select {
@@ -77,7 +64,7 @@
             border: none;
             font-size: 1em;
             cursor: pointer;
-            margin-bottom: 16px;
+            width: 100%; /* Remplir l'espace disponible */
         }
 
         table {
@@ -110,7 +97,7 @@
 
         .form-container input, .form-container button {
             width: 100%;
-            padding: 12px;
+            padding: 12px; /* Augmenter la taille des champs pour mobile */
             margin: 8px 0;
             border-radius: 4px;
             border: none;
@@ -152,18 +139,15 @@
 
         .action-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            flex-direction: column; /* Les boutons s'empilent verticalement */
+            gap: 8px; /* Espace entre les boutons */
         }
 
-        @media (max-width: 600px) {
+        /* Styles pour les écrans plus petits */
+        @media (max-width: 768px) {
             .dashboard {
                 flex-direction: column;
                 gap: 20px;
-            }
-
-            .card {
-                min-width: 100%;
             }
 
             .selectors {
@@ -171,17 +155,41 @@
                 gap: 10px;
             }
 
-            select {
-                width: 100%;
+            .form-container input, .form-container button {
+                font-size: 1.2em;
+            }
+
+            .card p {
+                font-size: 1.2em;
+            }
+
+            table th, table td {
+                font-size: 1em;
+                padding: 10px;
+            }
+        }
+
+        /* Pour les très petits écrans (comme les téléphones très étroits) */
+        @media (max-width: 480px) {
+            .card {
+                min-width: 100%; /* Occupation de toute la largeur */
+            }
+
+            .selectors select {
+                width: 100%; /* Occuper toute la largeur disponible */
             }
 
             .form-container input, .form-container button {
-                font-size: 1.2em;
+                font-size: 1.3em; /* Agrandir un peu les champs sur mobile */
+            }
+
+            .delete-button, .edit-button {
+                font-size: 1em; /* Agrandir les boutons sur mobile */
             }
         }
     </style>
     <script>
-        let articles = JSON.parse(localStorage.getItem('articles')) || [];
+        let articles = JSON.parse(localStorage.getItem('articles')) || []; // Récupérer les articles depuis localStorage au chargement de la page
 
         function ajouterArticle() {
             const nom = document.getElementById('nom').value;
@@ -190,29 +198,36 @@
             const prixVente = document.getElementById('prixVente').value ? parseFloat(document.getElementById('prixVente').value) : "Stock";
             const date = document.getElementById('date').value;
 
-            if (nom && marque && date && !isNaN(prixAchat)) {
-                const article = {
-                    nom,
-                    marque,
-                    prixAchat,
-                    prixVente,
-                    date
-                };
-                articles.push(article);
-                localStorage.setItem('articles', JSON.stringify(articles));
-                document.getElementById('articleForm').reset();
-                afficherArticles();
-            } else {
-                alert('Veuillez remplir tous les champs correctement.');
+            if (!nom || !marque || !date) {
+                alert('Veuillez remplir tous les champs obligatoires.');
+                return;
             }
+
+            if (isNaN(prixAchat) || prixAchat <= 0) {
+                alert('Veuillez entrer un prix d\'achat valide.');
+                return;
+            }
+
+            const article = {
+                nom,
+                marque,
+                prixAchat,
+                prixVente,
+                date
+            };
+
+            articles.push(article);
+            localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarder les articles dans localStorage
+            document.getElementById('articleForm').reset();
+            afficherArticles(); // Met à jour le tableau
         }
 
         function modifierArticle(index) {
             const prixVente = prompt("Entrez le prix de vente pour cet article :");
             if (prixVente !== null && !isNaN(prixVente)) {
-                articles[index].prixVente = parseFloat(prixVente);
-                localStorage.setItem('articles', JSON.stringify(articles));
-                afficherArticles();
+                articles[index].prixVente = parseFloat(prixVente); // Met à jour le prix de vente
+                localStorage.setItem('articles', JSON.stringify(articles)); // Sauvegarde dans localStorage
+                afficherArticles(); // Rafraîchit le tableau
             } else if (prixVente !== null) {
                 alert("Veuillez entrer un prix de vente valide.");
             }
@@ -220,9 +235,9 @@
 
         function supprimerArticle(index) {
             if (confirm("Êtes-vous sûr de vouloir supprimer cet article ?")) {
-                articles.splice(index, 1);
-                localStorage.setItem('articles', JSON.stringify(articles));
-                afficherArticles();
+                articles.splice(index, 1); // Supprime l'article de la liste
+                localStorage.setItem('articles', JSON.stringify(articles)); // Met à jour le localStorage
+                afficherArticles(); // Rafraîchit le tableau
             }
         }
 
@@ -256,6 +271,7 @@
             const benefice = totalVente - totalAchat;
             const margeMoyenne = totalAchat > 0 ? (totalVente / totalAchat).toFixed(2) : "0";
 
+            // Mise à jour des valeurs affichées
             document.getElementById('totalAchats').textContent = totalAchat.toFixed(2) + " €";
             document.getElementById('totalVentes').textContent = totalVente.toFixed(2) + " €";
             document.getElementById('benefice').textContent = benefice.toFixed(2) + " €";
@@ -264,7 +280,7 @@
 
         function afficherArticles() {
             const tableau = document.getElementById('listeArticles');
-            tableau.innerHTML = '';
+            tableau.innerHTML = ''; // Effacer le contenu précédent
 
             const headerRow = `
                 <tr>
@@ -280,6 +296,7 @@
 
             const articlesFiltres = filtrerArticlesParDate();
 
+            // Boucle sur chaque article
             articlesFiltres.forEach((article, index) => {
                 const benefice = article.prixVente !== "Stock" ? (article.prixVente - article.prixAchat).toFixed(2) : "-";
                 const row = document.createElement('tr');
@@ -288,4 +305,91 @@
                     <td>${article.nom}</td>
                     <td>${article.marque}</td>
                     <td style="color: red;">${article.prixAchat.toFixed(2)} €</td>
-                    <td style="color
+                    <td style="color: ${article.prixVente === "Stock" ? "gray" : "red"};">
+                        ${article.prixVente === "Stock" ? "Stock" : article.prixVente.toFixed(2) + " €"}
+                    </td>
+                    <td style="color: ${benefice > 0 ? "green" : benefice < 0 ? "red" : "gray"};">
+                        ${benefice === "-" ? "-" : benefice + " €"}
+                    </td>
+                    <td class="action-buttons">
+                        <button class="edit-button" onclick="modifierArticle(${index})">Modifier</button>
+                        <button class="delete-button" onclick="supprimerArticle(${index})">Supprimer</button>
+                    </td>
+                `;
+
+                tableau.appendChild(row); // Ajouter la ligne au tableau
+            });
+
+            calculerStatistiques(articlesFiltres); // Recalculer les statistiques
+        }
+
+        // Appeler afficherArticles() au chargement de la page pour afficher les articles sauvegardés
+        window.onload = afficherArticles;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>DASHBOARD</h1>
+
+        <!-- Sélecteur d'année et mois -->
+        <div class="selectors">
+            <select id="annee" onchange="afficherArticles()">
+                <option value="Tous">Tous</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+            </select>
+
+            <select id="mois" onchange="afficherArticles()">
+                <option value="Tous">Tous</option>
+                <option value="01">Janvier</option>
+                <option value="02">Février</option>
+                <option value="03">Mars</option>
+                <option value="04">Avril</option>
+                <option value="05">Mai</option>
+                <option value="06">Juin</option>
+                <option value="07">Juillet</option>
+                <option value="08">Août</option>
+                <option value="09">Septembre</option>
+                <option value="10">Octobre</option>
+                <option value="11">Novembre</option>
+                <option value="12">Décembre</option>
+            </select>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>Bénéfice</h3>
+                <p id="benefice">0 €</p>
+            </div>
+            <div class="card">
+                <h3>Total achats</h3>
+                <p id="totalAchats">0 €</p>
+            </div>
+            <div class="card">
+                <h3>Total ventes (CA)</h3>
+                <p id="totalVentes">0 €</p>
+            </div>
+            <div class="card">
+                <h3>Marge moyenne</h3>
+                <p id="margeMoyenne">0x</p>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <h2>Ajouter un article</h2>
+            <form id="articleForm">
+                <input type="text" id="nom" placeholder="Nom de l'article" required>
+                <input type="text" id="marque" placeholder="Marque" required>
+                <input type="number" step="0.01" id="prixAchat" placeholder="Prix d'achat (€)" required>
+                <input type="number" step="0.01" id="prixVente" placeholder="Prix de vente (€)">
+                <input type="date" id="date" required>
+                <button type="button" onclick="ajouterArticle()">Ajouter</button>
+            </form>
+        </div>
+
+        <h2>Liste des articles:</h2>
+        <table id="listeArticles"></table>
+    </div>
+</body>
+</html>
